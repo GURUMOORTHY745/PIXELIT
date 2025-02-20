@@ -300,6 +300,14 @@ header {
                 document.getElementById('error-message').classList.remove('hidden');
             }
         }
+document.addEventListener("DOMContentLoaded", () => {
+    const menuBtn = document.getElementById("menu-btn");
+    const mobileMenu = document.getElementById("mobile-menu");
+
+    menuBtn.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+    });
+});
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData('coordinators', 'coordinators-cards');
