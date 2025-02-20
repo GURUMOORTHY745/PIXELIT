@@ -73,10 +73,9 @@
     </style>
 </head>
 <body class="bg-gray-900 text-white">
+    
     <!-- Smaller Header -->
     <header class="gradient-bg p-4 flex justify-between items-center shadow-lg">
-        
-        
         <div class="nav-links flex space-x-6">
             <a href="#club-intro" class="text-white">Home</a>
             <a href="#coordinators" class="text-white">Coordinators</a>
@@ -87,7 +86,6 @@
             <a href="#query-form" class="text-white">Enquiry</a>
             <a href="login.html" target="_blank" class="text-white">Admin</a>
         </div>
-    </nav>
     </header>
 
     <main class="p-8">
@@ -152,16 +150,10 @@
     <footer class="gradient-bg p-2 mt-12 text-center shadow-lg">
         <p class="mb-4 text-lg text-white">PIXELIT Gaming Club ©Guru 2025</p>
         <div class="flex justify-center space-x-6">
-            <a href="https://facebook.com" target="_blank" aria-label="Facebook">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook" class="w-8 h-8 hover:opacity-80 transition-opacity">
-            </a>
-            <a href="https://twitter.com" target="_blank" aria-label="Twitter">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Twitter" class="w-8 h-8 hover:opacity-80 transition-opacity">
-            </a>
-            <a href="https://instagram.com" target="_blank" aria-label="Instagram">
+            <a href="https://www.instagram.com/pixelit_kare?igsh=MWZ5ZGozMnp6dWk4cA==" target="_blank" aria-label="Instagram">
                 <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" class="w-8 h-8 hover:opacity-80 transition-opacity">
             </a>
-            <a href="https://linkedin.com" target="_blank" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/in/pixelit-it-242a69330?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_apphttps://linkedin.com" target="_blank" aria-label="LinkedIn">
                 <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" class="w-8 h-8 hover:opacity-80 transition-opacity">
             </a>
         </div>
@@ -183,7 +175,8 @@
                 }
 
                 container.innerHTML = data.map(item => {
-                    const imageUrl = item.photo ? `https://pixelit.onrender.com${item.photo}` : 'https://via.placeholder.com/120';
+                    const imageUrl = item.photo && item.photo.startsWith('http') ? item.photo : 'https://via.placeholder.com/120';
+
 
                     if (endpoint === 'contacts') {
                         return `
