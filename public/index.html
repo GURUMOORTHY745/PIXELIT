@@ -300,14 +300,30 @@ header {
                 document.getElementById('error-message').classList.remove('hidden');
             }
         }
-document.addEventListener("DOMContentLoaded", () => {
-    const menuBtn = document.getElementById("menu-btn");
-    const mobileMenu = document.getElementById("mobile-menu");
+document.addEventListener('DOMContentLoaded', () => {
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const navLinks = document.querySelectorAll('.mobile-nav-link');
 
-    menuBtn.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
+        // Toggle Mobile Menu
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close menu when clicking a nav link
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!menuBtn.contains(event.target) && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
     });
-});
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchData('coordinators', 'coordinators-cards');
