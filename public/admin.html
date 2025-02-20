@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="FINAL comp.png">
     <link rel="stylesheet" href="/styles/admin.css">
     <style>
         /* Basic Table Styling */
@@ -89,6 +90,7 @@
     </header>
 
     <main>
+        
         <!-- Manage Members -->
         <section id="admin-members">
             <h2>Manage Members</h2>
@@ -96,9 +98,9 @@
                 <input type="text" name="name" placeholder="Member Name" required />
                 <input type="text" name="registrationNumber" placeholder="Registration Number" required />
                 <input type="text" name="role" placeholder="Role" required />
-                <input type="file" name="photo" accept="image/*" required />
+                <input type="file" name="photo" accept="image/*" />
                 <button type="submit">Add Member</button>
-            </form>
+            </form>            
             <table id="members-table">
                 <thead>
                     <tr>
@@ -234,7 +236,8 @@
             </table>
         </section>
     </main>
+    
 
     <script src="/scripts/admin.js"></script>
 </body>
-</html>
+</html> 
