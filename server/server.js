@@ -6,9 +6,13 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const nodemailer = require('nodemailer'); // Added Nodemailer
+const nodemailer = require('nodemailer');
+const fs = require('fs'); // Import fs module
 require('dotenv').config();
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+
 
 const { Admin, Member, Coordinator, UpcomingEvent, ClubGame, Contact } = require('./models');
 
@@ -17,10 +21,19 @@ const PORT = process.env.PORT || 5001;
 const SECRET_KEY = process.env.SECRET_KEY;
 const MONGO_URI = process.env.MONGO_URI;
 
+
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  
 
 // Static Files Setup
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -32,22 +45,17 @@ if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
 app.use(express.static(publicDir));
 
 // File Upload Configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadsDir),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
 
-const upload = multer({
-    storage,
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'video/mp4', 'video/webm'];
-        if (!allowedTypes.includes(file.mimetype)) {
-            return cb(new Error('Unsupported file type'), false);
-        }
-        cb(null, true);
-    }
-});
-
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'PIXELIT_GamingClub', // Folder name in Cloudinary
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
+    },
+  });
+  
+  const upload = multer({ storage });
+  
 // Database Connection
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('✅ MongoDB connected'))
@@ -65,24 +73,8 @@ function verifyToken(req, res, next) {
     });
 }
 
+
 // Admin Authentication Routes
-app.post('/api/register', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ message: 'Username and password are required' });
-
-    try {
-        const existingAdmin = await Admin.findOne({ username });
-        if (existingAdmin) return res.status(400).json({ message: 'Username already exists' });
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newAdmin = new Admin({ username, password: hashedPassword });
-        await newAdmin.save();
-        res.status(201).json({ message: 'Admin registered successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error registering admin', error });
-    }
-});
-
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -106,7 +98,9 @@ const models = {
     contacts: Contact
 };
 
+// ✅ Apply CRUD routes to all models
 Object.entries(models).forEach(([route, Model]) => {
+    // Fetch all items
     app.get(`/api/${route}`, async (req, res) => {
         try {
             const items = await Model.find();
@@ -115,39 +109,60 @@ Object.entries(models).forEach(([route, Model]) => {
             res.status(500).json({ message: `Error fetching ${route}`, error });
         }
     });
-// Generic Delete Route for All Collections
-app.delete('/api/:collection/:id', verifyToken, async (req, res) => {
-    const { collection, id } = req.params;
 
-    // Validate collection name
-    if (!models[collection]) {
-        return res.status(400).json({ message: 'Invalid collection name' });
-    }
-
-    try {
-        const deletedItem = await models[collection].findByIdAndDelete(id);
-        if (!deletedItem) {
-            return res.status(404).json({ message: `${collection.slice(0, -1)} not found` });
-        }
-        res.json({ message: `${collection.slice(0, -1)} deleted successfully` });
-    } catch (error) {
-        res.status(500).json({ message: `Error deleting ${collection.slice(0, -1)}`, error });
-    }
-});
-
-    app.post(`/api/${route}`, verifyToken, upload.fields([{ name: 'photo' }, { name: 'media' }]), async (req, res) => {
+    // Create a new item
+    app.post(`/api/${route}`, upload.single('photo'), async (req, res) => {
         try {
-            const data = { ...req.body };
-            if (req.files['photo']) data.photo = `/uploads/${req.files['photo'][0].filename}`;
-            if (req.files['media']) data.media = `/uploads/${req.files['media'][0].filename}`;
-            const newItem = new Model(data);
+            let photoUrl = req.file ? req.file.path : ''; // Cloudinary URL
+
+            const newItem = new Model({ ...req.body, photo: photoUrl });
             await newItem.save();
+
             res.status(201).json(newItem);
         } catch (error) {
-            res.status(500).json({ message: `Error creating ${route.slice(0, -1)}`, error });
+            console.error(`❌ Error creating ${route}:`, error);
+            res.status(500).json({ message: `Error creating ${route}`, error });
+        }
+    });
+
+    // Update an existing item
+    app.put(`/api/${route}/:id`, upload.single('photo'), async (req, res) => {
+        const { id } = req.params;
+        try {
+            let updateData = { ...req.body };
+
+            if (req.file) {
+                updateData.photo = req.file.path; // Cloudinary URL
+            }
+
+            const updatedItem = await Model.findByIdAndUpdate(id, updateData, { new: true });
+
+            if (!updatedItem) {
+                return res.status(404).json({ message: `${route} not found` });
+            }
+
+            res.json(updatedItem);
+        } catch (error) {
+            console.error(`❌ Error updating ${route}:`, error);
+            res.status(500).json({ message: `Error updating ${route}`, error });
+        }
+    });
+
+    // Delete an item
+    app.delete(`/api/${route}/:id`, async (req, res) => {
+        const { id } = req.params;
+        try {
+            const deletedItem = await Model.findByIdAndDelete(id);
+            if (!deletedItem) {
+                return res.status(404).json({ message: `${route.slice(0, -1)} not found` });
+            }
+            res.json({ message: `${route.slice(0, -1)} deleted successfully` });
+        } catch (error) {
+            res.status(500).json({ message: `Error deleting ${route.slice(0, -1)}`, error });
         }
     });
 });
+
 
 // Nodemailer Setup
 const transporter = nodemailer.createTransport({
@@ -165,7 +180,7 @@ app.post('/api/send-query', async (req, res) => {
     }
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: '9922008109@klu.ac.in',
+        to: 'pixelit@klu.ac.in',
         subject: `New Query from ${name}`,
         text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
     };
